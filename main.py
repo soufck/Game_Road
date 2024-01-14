@@ -1,10 +1,22 @@
 import pygame
-import pprint
+import random
 
 green = (70, 200, 50)
 white = (255, 255, 254)
 width_line = 10
 heing_lines = 50
+
+class EnemyCar(pygame.sprite.Sprite):
+    def __init__(self, lane):
+        super().__init__()
+        self.image = pygame.Surface((40, 80))
+        self.image.fill((255, 0, 0))
+        self.rect = self.image.get_rect()
+        self.rect.centerx = lane
+        self.rect.top = -80
+
+    def update(self):
+        self.rect.y += 5
 
 
 class CarPlayer(pygame.sprite.Sprite):
@@ -13,21 +25,29 @@ class CarPlayer(pygame.sprite.Sprite):
         pygame.sprite.Sprite.__init__(self)
         image = pygame.image.load("images/red.png")
 
-        self.image = pygame.transform.scale(image, (160, 170))
+        self.image = pygame.transform.scale(image, (80, 150))
 
         self.rect = self.image.get_rect()
         self.rect.center = [x, y]
 
     def move(self, type_event):
-        if type_event == pygame.K_LEFT and self.line > 0:
-            self.line -= 1
+        if type_event == pygame.K_LEFT and self.rect.x > 240:
             self.rect.x -= 160
-        if type_event == pygame.K_RIGHT and self.line < 2:
-            self.line += 1
+        if type_event == pygame.K_RIGHT and self.rect.x < 480:
             self.rect.x += 160
 
 
+class EnemyCar(pygame.sprite.Sprite):
+    def __init__(self, lane):
+        super().__init__()
+        self.image = pygame.Surface((80, 120))
+        self.image.fill((255, 0, 0))
+        self.rect = self.image.get_rect()
+        self.rect.centerx = lane
+        self.rect.top = -80
 
+    def update(self):
+        self.rect.y += 3
 
 
 def main():
@@ -44,21 +64,31 @@ def main():
 
     line_move = 0
 
+    enemy_spawn_timer = 0
+    enemy_spawn_interval = 1000
+
     running = True
     while running:
+        current_time = pygame.time.get_ticks()
+        if current_time - enemy_spawn_timer > enemy_spawn_interval:
+            enemy_spawn_timer = current_time
+            num_enemies = random.randint(0, 2)
+            for _ in range(num_enemies):
+                lane = random.choice([240, 400, 560])
+                enemy_car = EnemyCar(lane)
+                car_group.add(enemy_car)
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
 
-            if event.type == pygame.KEYDOWN:
+            elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT:
                     player.move(event.key)
 
-
-
         pygame.time.Clock().tick(120)
 
-        screen.fill((green))
+        screen.fill(green)
 
         pygame.draw.rect(screen, (79, 80, 85), road_coord)
 
