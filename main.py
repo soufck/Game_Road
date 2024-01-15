@@ -1,10 +1,12 @@
 import pygame
 import random
+from pgu import gui
 
 green = (70, 200, 50)
 white = (255, 255, 254)
 width_line = 10
 heing_lines = 50
+boom = pygame.transform.scale(pygame.image.load("images/boom.png"), (360, 120))
 
 
 class CarPlayer(pygame.sprite.Sprite):
@@ -28,7 +30,7 @@ class CarPlayer(pygame.sprite.Sprite):
 
 
 class EnemyCar(pygame.sprite.Sprite):
-    def __init__(self, lane):
+    def __init__(self, lane, speed):
         pygame.sprite.Sprite.__init__(self)
 
         num = random.randint(1, 3)
@@ -39,11 +41,13 @@ class EnemyCar(pygame.sprite.Sprite):
         self.rect.centerx = lane
         self.rect.top = -80
 
+        self.speed = speed
+
         self.moving = True
 
     def update(self):
         if self.moving:
-            self.rect.y += 4
+            self.rect.y += self.speed
 
     def stop(self):
         self.moving = False
@@ -52,6 +56,12 @@ class EnemyCar(pygame.sprite.Sprite):
 def main():
     moving = True
     pygame.init()
+
+    def drow_score(screen, score):
+        font = pygame.font.Font(None, 50)
+        text = font.render(str(score), True, (0, 0, 0))
+        screen.blit(text, (40, 50))
+
     size = width, height = 800, 700
     screen = pygame.display.set_mode(size)
 
@@ -63,22 +73,39 @@ def main():
 
     road_coord = (160, 0, 480, height)
 
+    score = 0
+    cod_score = 4000
+    timer = 0
+
+    speed_car = 4
+
     line_move = 0
 
     enemy_spawn_timer = 0
-    enemy_spawn_interval = 900
+    enemy_spawn_interval = 1500
 
     running = True
     while running:
+        current_time = pygame.time.get_ticks()
+        if current_time - timer > 1000 and moving:
+            timer = current_time
+            score += 200
+            if score >= cod_score:
+                cod_score += 4000
+                speed_car += 1
+                if enemy_spawn_interval > 600 and cod_score % 8000 == 0:
+                    enemy_spawn_interval -= 200
+
+                print(cod_score)
+
         if moving:
             line_move += 4
-            current_time = pygame.time.get_ticks()
             if current_time - enemy_spawn_timer > enemy_spawn_interval:
                 enemy_spawn_timer = current_time
                 num_enemies = random.randint(0, 2)
                 for _ in range(num_enemies):
                     lane = random.choice([240, 400, 560])
-                    enemy_car = EnemyCar(lane)
+                    enemy_car = EnemyCar(lane, speed_car)
                     other_car_group.add(enemy_car)
 
             for event in pygame.event.get():
@@ -108,15 +135,6 @@ def main():
             pygame.draw.rect(screen, white, (315, y + line_move, width_line, heing_lines))
             pygame.draw.rect(screen, white, (475, y + line_move, width_line, heing_lines))
 
-        if pygame.sprite.groupcollide(car_player_group, other_car_group, False, False):
-            moving = False
-            for car in other_car_group:
-                car.stop()
-            x = player.get_x()
-            image_boom = pygame.image.load("images/boom.png")
-            image_boom = pygame.transform.scale(image_boom, (80, 150))
-            screen.blit(image_boom, (x, 440, 100, 100))
-
         car_player_group.update()
         other_car_group.update()
         car_player_group.draw(screen)
@@ -126,6 +144,10 @@ def main():
             moving = False
             for car in other_car_group:
                 car.stop()
+            x = player.get_x()
+            screen.blit(boom, (x - 150, 530))
+
+        drow_score(screen, score)
 
         pygame.display.update()
     pygame.quit()
