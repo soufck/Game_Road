@@ -1,12 +1,41 @@
 import pygame
 import random
-from pgu import gui
 
 green = (70, 200, 50)
 white = (255, 255, 254)
 width_line = 10
 heing_lines = 50
 boom = pygame.transform.scale(pygame.image.load("images/boom.png"), (360, 120))
+
+
+class Button:
+    def __init__(self, x, y, size_x, size_y, image, image_hover=None):
+        self.x = x
+        self.y = y
+        self.size_x = size_x
+        self.size_y = size_y
+        self.image = pygame.image.load(image)
+        self.image = pygame.transform.scale(self.image, (size_x, size_y))
+        self.rect = self.image.get_rect(topleft=(x, y))
+        if image_hover:
+            self.image_hover = pygame.image.load(image_hover)
+            self.image_hover = pygame.transform.scale(self.image_hover, (size_x, size_y))
+        self.is_hover = False
+
+    def draw(self, screen):
+        if self.is_hover:
+            images = self.image_hover
+        else:
+            images = self.image
+        screen.blit(images, (self.x, self.y))
+
+    def check_pos(self, mouse_pos):
+        self.is_hover = self.rect.collidepoint(mouse_pos)
+
+    def click(self, event):
+        print(123)
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            main()
 
 
 class CarPlayer(pygame.sprite.Sprite):
@@ -52,6 +81,9 @@ class EnemyCar(pygame.sprite.Sprite):
     def stop(self):
         self.moving = False
 
+    def get_y(self):
+        return self.rect.y
+
 
 def main():
     moving = True
@@ -64,6 +96,8 @@ def main():
 
     size = width, height = 800, 700
     screen = pygame.display.set_mode(size)
+
+    buttun = Button(200, 200, 400, 200, "images/restart_0.png", image_hover="images/restart.png")
 
     car_player_group = pygame.sprite.Group()
     other_car_group = pygame.sprite.Group()
@@ -90,9 +124,13 @@ def main():
         if current_time - timer > 1000 and moving:
             timer = current_time
             score += 200
+            for car in other_car_group:
+                if car.rect.y > 800:
+                    car.kill()
             if score >= cod_score:
                 cod_score += 4000
                 speed_car += 1
+
                 if enemy_spawn_interval > 600 and cod_score % 8000 == 0:
                     enemy_spawn_interval -= 200
 
@@ -127,11 +165,12 @@ def main():
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
+                buttun.click(event)
 
         if line_move >= heing_lines * 1.3:
             line_move = 0
 
-        for y in range(0, height, int(heing_lines * 1.5)):
+        for y in range(0, height, int(heing_lines * 1.4)):
             pygame.draw.rect(screen, white, (315, y + line_move, width_line, heing_lines))
             pygame.draw.rect(screen, white, (475, y + line_move, width_line, heing_lines))
 
@@ -147,8 +186,12 @@ def main():
             x = player.get_x()
             screen.blit(boom, (x - 150, 530))
 
-        drow_score(screen, score)
+            buttun = Button(200, 200, 400, 200, "images/restart_0.png", image_hover="images/restart.png")
+            buttun.check_pos(pygame.mouse.get_pos())
+            buttun.draw(screen)
 
+
+        drow_score(screen, score)
         pygame.display.update()
     pygame.quit()
 
