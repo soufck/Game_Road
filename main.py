@@ -9,6 +9,38 @@ boom = pygame.transform.scale(pygame.image.load("images/boom.png"), (360, 120))
 stop = True
 
 
+class Bonus(pygame.sprite.Sprite):
+    def __init__(self, image, line, speed):
+        pygame.sprite.Sprite.__init__(self)
+        self.lines = [240, 400, 560]
+
+        self.image = pygame.image.load(image)
+        self.image = pygame.transform.scale(self.image, (80, 80))
+
+        self.rect = self.image.get_rect()
+        self.rect.center = [self.lines[line], -50]
+
+        self.moving = True
+        self.pause = False
+        self.speed = speed
+
+    def update(self):
+        if self.moving and not self.pause:
+            self.rect.y += self.speed
+
+    def stop_end(self):
+        self.moving = False
+
+    def stop(self):
+        if not self.pause:
+            self.pause = True
+        else:
+            self.pause = False
+
+    def lute(self):
+        pass
+
+
 class GreatingWindow:
     def __init__(self):
         self.game = 0
@@ -32,7 +64,7 @@ class GreatingWindow:
             pygame.display.update()
 
     def message_to_screen(self, text, color, y_displace=0, size="small"):
-        font = pygame.font.SysFont(None, 55)
+        font = pygame.font.SysFont("Areal", 55)
         text_surf, text_rect = self.text_objects(text, font)
         text_rect.center = (self.screen_width / 2), (self.screen_height / 2) + y_displace
         self.screen.blit(text_surf, text_rect)
@@ -53,7 +85,7 @@ class GreatingWindow:
         else:
             pygame.draw.rect(self.screen, ic, (x, y, w, h))
 
-        small_text = pygame.font.SysFont(None, 20)
+        small_text = pygame.font.SysFont("Areal", 20)
         text_surf, text_rect = self.text_objects(msg, small_text)
         text_rect.center = ((x + (w / 2)), (y + (h / 2)))
         self.screen.blit(text_surf, text_rect)
@@ -140,6 +172,8 @@ class EnemyCar(pygame.sprite.Sprite):
         self.image = pygame.image.load("images/car" + str(num) + ".png")
         self.image = pygame.transform.scale(self.image, (80, 150))
 
+        self.line = lane
+
         self.rect = self.image.get_rect()
         self.rect.centerx = lane
         self.rect.top = -80
@@ -164,7 +198,26 @@ class EnemyCar(pygame.sprite.Sprite):
             self.pause = False
 
     def get_y(self):
-        return self.rect.y
+        return self.rect.y, [240, 400, 560].index(self.line)
+
+
+def drow_score(screen, score):
+    font = pygame.font.Font(None, 50)
+    text = font.render(str(score), True, (0, 0, 0))
+    screen.blit(text, (40, 50))
+
+
+def check_pos(other_car_group, line):
+    l = [True]
+    for car in other_car_group:
+        if line == car.get_y()[1]:
+            if car.get_y()[0] - 60 > -50:
+                l.append(True)
+            else:
+                l.append(False)
+        else:
+            l.append(True)
+    return all(l)
 
 
 def main():
@@ -172,23 +225,20 @@ def main():
     stop = True
     pygame.init()
 
-    def drow_score(screen, score):
-        font = pygame.font.Font(None, 50)
-        text = font.render(str(score), True, (0, 0, 0))
-        screen.blit(text, (40, 50))
-
     size = width, height = 800, 700
     screen = pygame.display.set_mode(size)
-
+    road_coord = (160, 0, 480, height)
+    # группы спрайтов
     car_player_group = pygame.sprite.Group()
     other_car_group = pygame.sprite.Group()
+    bonus_group = pygame.sprite.Group()
+    # машинка игрока
     player_x = 400
     player = CarPlayer(player_x)
     car_player_group.add(player)
 
-    road_coord = (160, 0, 480, height)
-
-    score = 0
+    # работа с очками
+    score = -200
     cod_score = 4000
     timer = 0
 
@@ -202,6 +252,7 @@ def main():
     running = True
     while running:
         current_time = pygame.time.get_ticks()
+        # Счетчик очков и увеличение скорости
         if current_time - timer > 1000 and moving and stop:
             timer = current_time
             score += 200
@@ -215,18 +266,23 @@ def main():
                 if enemy_spawn_interval > 600 and cod_score % 8000 == 0:
                     enemy_spawn_interval -= 200
 
-                print(cod_score)
-
         if moving:
             if stop:
                 line_move += 4
                 if current_time - enemy_spawn_timer > enemy_spawn_interval:
+                    # спавн машинок
                     enemy_spawn_timer = current_time
                     num_enemies = random.randint(0, 2)
                     for _ in range(num_enemies):
                         lane = random.choice([240, 400, 560])
                         enemy_car = EnemyCar(lane, speed_car)
                         other_car_group.add(enemy_car)
+                    # спавн бонусов
+                    if score % 800 == 0 and score > 0:
+                        lane_bonus = random.randint(0, 2)
+                        if check_pos(other_car_group, lane_bonus):
+                            bonus = Bonus("images/stop.png", lane_bonus, speed_car)
+                            bonus_group.add(bonus)
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -268,10 +324,13 @@ def main():
             pygame.draw.rect(screen, white, (315, y + line_move, width_line, heing_lines))
             pygame.draw.rect(screen, white, (475, y + line_move, width_line, heing_lines))
 
-        car_player_group.update()
         other_car_group.update()
-        car_player_group.draw(screen)
+        bonus_group.update()
+        car_player_group.update()
+
         other_car_group.draw(screen)
+        bonus_group.draw(screen)
+        car_player_group.draw(screen)
 
         if pygame.sprite.groupcollide(car_player_group, other_car_group, False, False):
             moving = False
