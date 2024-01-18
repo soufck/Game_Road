@@ -41,6 +41,26 @@ class Bonus(pygame.sprite.Sprite):
         pass
 
 
+class Bonuse_2X(Bonus):
+    def lute(self):
+        return ("*", 2)
+
+
+class Bonuse_3X(Bonus):
+    def lute(self):
+        return ("*", 3)
+
+
+class Bonuse_05X(Bonus):
+    def lute(self):
+        return ("*", 0.5)
+
+
+class Bonuse_0X(Bonus):
+    def lute(self):
+        return ("*", 0)
+
+
 class GreatingWindow:
     def __init__(self):
         self.game = 0
@@ -221,9 +241,13 @@ def check_pos(other_car_group, line):
 
 
 def main():
+    action = False
+    bonus_action = False
     moving = True
     stop = True
     pygame.init()
+
+    multiplier = 1
 
     size = width, height = 800, 700
     screen = pygame.display.set_mode(size)
@@ -247,15 +271,26 @@ def main():
     line_move = 0
 
     enemy_spawn_timer = 0
+    spawn_bonus_timer = 0
     enemy_spawn_interval = 1500
 
     running = True
     while running:
         current_time = pygame.time.get_ticks()
+
+        if bonus_action:
+            if current_time > spawn_bonus_timer:
+                multiplier = 1
+                bonus_action = False
         # Счетчик очков и увеличение скорости
         if current_time - timer > 1000 and moving and stop:
             timer = current_time
-            score += 200
+            if not action:
+                score += 200
+            if action:
+                if action == "*":
+                    score += (200 * multiplier)
+
             for car in other_car_group:
                 if car.rect.y > 800:
                     car.kill()
@@ -278,10 +313,15 @@ def main():
                         enemy_car = EnemyCar(lane, speed_car)
                         other_car_group.add(enemy_car)
                     # спавн бонусов
-                    if score % 800 == 0 and score > 0:
+                    if score % 200 == 0 and score > 0 and not bonus_action:
                         lane_bonus = random.randint(0, 2)
+                        list_bonus = [Bonuse_3X("images/stop.png", lane_bonus, speed_car),
+                                      Bonuse_2X("images/stop.png", lane_bonus, speed_car),
+                                      Bonuse_05X("images/stop.png", lane_bonus, speed_car),
+                                      Bonuse_0X("images/stop.png", lane_bonus, speed_car)]
                         if check_pos(other_car_group, lane_bonus):
-                            bonus = Bonus("images/stop.png", lane_bonus, speed_car)
+                            n = random.randint(0, 1)
+                            bonus = list_bonus[n]
                             bonus_group.add(bonus)
 
             for event in pygame.event.get():
@@ -331,6 +371,13 @@ def main():
         other_car_group.draw(screen)
         bonus_group.draw(screen)
         car_player_group.draw(screen)
+
+        if pygame.sprite.groupcollide(car_player_group, bonus_group, False, False):
+            for bonuses in bonus_group:
+                bonus_action = True
+                spawn_bonus_timer = current_time + 10000
+                action, multiplier = bonuses.lute()
+                bonuses.kill()
 
         if pygame.sprite.groupcollide(car_player_group, other_car_group, False, False):
             moving = False
