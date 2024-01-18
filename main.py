@@ -150,18 +150,12 @@ class Button:
         else:
             images = self.image
         screen.blit(images, (self.x, self.y))
-
     def check_pos(self, mouse_pos):
         self.is_hover = self.rect.collidepoint(mouse_pos)
 
     def click(self, event):
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             main()
-
-
-class ButtonStop(Button):
-    def click(self, event):
-        pass
 
 
 class CarPlayer(pygame.sprite.Sprite):
@@ -274,10 +268,19 @@ def main():
     enemy_spawn_timer = 0
     spawn_bonus_timer = 0
     enemy_spawn_interval = 1500
+    # отслеживание уровня
+    current_car_level = 1
+    max_car_level = 6
+    levels = ["red.png", "yellowcar.png", "greencar.png", "bluecar.png", "pinkcar.png", "whitecar.png"]
 
     running = True
     while running:
         current_time = pygame.time.get_ticks()
+
+        if score >= current_car_level * 6000 and current_car_level < max_car_level:
+            current_car_level += 1
+            player.image = pygame.image.load(f"images/{levels[current_car_level - 1]}")
+            player.image = pygame.transform.scale(player.image, (80, 150))
 
         if not stop:
             enemy_spawn_timer = current_time
@@ -320,10 +323,10 @@ def main():
                     # спавн бонусов
                     if score % 800 == 0 and score > 0 and not bonus_action:
                         lane_bonus = random.randint(0, 2)
-                        list_bonus = [Bonuse_3X("images/stop.png", lane_bonus, speed_car),
-                                      Bonuse_2X("images/bonus_2X.png", lane_bonus, speed_car),
-                                      Bonuse_05X("images/stop.png", lane_bonus, speed_car),
-                                      Bonuse_0X("images/stop.png", lane_bonus, speed_car)]
+                        list_bonus = [Bonuse_3X("images/triple.png", lane_bonus, speed_car),
+                                      Bonuse_2X("images/double.png", lane_bonus, speed_car),
+                                      Bonuse_05X("images/zerofive.png", lane_bonus, speed_car),
+                                      Bonuse_0X("images/zero.png", lane_bonus, speed_car)]
                         if check_pos(other_car_group, lane_bonus):
                             n = random.randint(0, 1)
                             bonus = list_bonus[n]
@@ -395,7 +398,7 @@ def main():
                 car.stop_end()
             x = player.get_x()
             screen.blit(boom, (x - 150, 530))
-            buttun = Button(200, 200, 400, 200, "images/restart_0.png", image_hover="images/restart.png")
+            buttun = Button(200, 150, 400, 200, "images/restart_0.png", image_hover="images/restart.png")
             buttun.check_pos(pygame.mouse.get_pos())
             buttun.draw(screen)
 
