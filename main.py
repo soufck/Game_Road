@@ -246,6 +246,7 @@ def main():
     moving = True
     stop = True
     pygame.init()
+    speed_image = 1
 
     multiplier = 1
 
@@ -278,6 +279,9 @@ def main():
     while running:
         current_time = pygame.time.get_ticks()
 
+        if not stop:
+            enemy_spawn_timer = current_time
+
         if bonus_action:
             if current_time > spawn_bonus_timer:
                 multiplier = 1
@@ -294,11 +298,12 @@ def main():
             for car in other_car_group:
                 if car.rect.y > 800:
                     car.kill()
-            if score >= cod_score:
-                cod_score += 4000
+            if score >= cod_score and speed_car < 8:
+                cod_score += 8000
                 speed_car += 1
 
-                if enemy_spawn_interval > 600 and cod_score % 8000 == 0:
+                if enemy_spawn_interval > 600 and cod_score // 12000 == speed_image and speed_car < 8:
+                    speed_image += 1
                     enemy_spawn_interval -= 200
 
         if moving:
@@ -313,10 +318,10 @@ def main():
                         enemy_car = EnemyCar(lane, speed_car)
                         other_car_group.add(enemy_car)
                     # спавн бонусов
-                    if score % 200 == 0 and score > 0 and not bonus_action:
+                    if score % 800 == 0 and score > 0 and not bonus_action:
                         lane_bonus = random.randint(0, 2)
                         list_bonus = [Bonuse_3X("images/stop.png", lane_bonus, speed_car),
-                                      Bonuse_2X("images/stop.png", lane_bonus, speed_car),
+                                      Bonuse_2X("images/bonus_2X.png", lane_bonus, speed_car),
                                       Bonuse_05X("images/stop.png", lane_bonus, speed_car),
                                       Bonuse_0X("images/stop.png", lane_bonus, speed_car)]
                         if check_pos(other_car_group, lane_bonus):
@@ -339,10 +344,15 @@ def main():
                             stop = False
                             for car in other_car_group:
                                 car.stop()
+
+                            for _ in bonus_group:
+                                _.stop()
                         else:
                             stop = True
                             for car in other_car_group:
                                 car.stop()
+                            for _ in bonus_group:
+                                _.stop()
 
         pygame.time.Clock().tick(120)
 
@@ -375,7 +385,7 @@ def main():
         if pygame.sprite.groupcollide(car_player_group, bonus_group, False, False):
             for bonuses in bonus_group:
                 bonus_action = True
-                spawn_bonus_timer = current_time + 10000
+                spawn_bonus_timer = current_time + 6000
                 action, multiplier = bonuses.lute()
                 bonuses.kill()
 
