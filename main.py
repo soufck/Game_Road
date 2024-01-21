@@ -76,7 +76,7 @@ class GreatingWindow:
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     quit()
-            self.screen.fill(green)
+            self.screen.fill((0, 0, 0))
             self.message_to_screen("Добро пожаловать в игру Машинки", (0, 0, 0), -100, size="large")
             self.button("Начать игру", 150, 450, 100, 50, (0, 0, 0), (0, 255, 0), self.game_loop)
             self.button("Правила", 550, 450, 100, 50, (0, 0, 0), (0, 0, 255), self.show_rules)
@@ -222,16 +222,16 @@ def drow_score(screen, score):
 
 
 def check_pos(other_car_group, line):
-    l = [True]
+    list1 = [True]
     for car in other_car_group:
         if line == car.get_y()[1]:
             if car.get_y()[0] - 60 > -50:
-                l.append(True)
+                list1.append(True)
             else:
-                l.append(False)
+                list1.append(False)
         else:
-            l.append(True)
-    return all(l)
+            list1.append(True)
+    return all(list1)
 
 
 def main():
@@ -257,7 +257,7 @@ def main():
     car_player_group.add(player)
 
     # работа с очками
-    score = -200
+    score = 0
     cod_score = 4000
     timer = 0
 
@@ -296,7 +296,7 @@ def main():
                 score += 200
             if action:
                 if action == "*":
-                    score += (200 * multiplier)
+                    score += int(200 * multiplier)
 
             for car in other_car_group:
                 if car.rect.y > 800:
@@ -328,7 +328,7 @@ def main():
                                       Bonuse_05X("images/zerofive.png", lane_bonus, speed_car),
                                       Bonuse_0X("images/zero.png", lane_bonus, speed_car)]
                         if check_pos(other_car_group, lane_bonus):
-                            n = random.randint(0, 1)
+                            n = random.randint(0, 3)
                             bonus = list_bonus[n]
                             bonus_group.add(bonus)
 
@@ -396,6 +396,8 @@ def main():
             moving = False
             for car in other_car_group:
                 car.stop_end()
+            for bonus in bonus_group:
+                bonus.stop_end()
             x = player.get_x()
             screen.blit(boom, (x - 150, 530))
             buttun = Button(200, 150, 400, 200, "images/restart_0.png", image_hover="images/restart.png")
