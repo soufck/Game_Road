@@ -115,7 +115,7 @@ class GreatingWindow:
         screen = pygame.display.set_mode((800, 600))
         font = pygame.font.SysFont("Areal", 36)
 
-        with open('rules.txt', 'r') as file:
+        with open('rules.txt', 'r', encoding='utf-8') as file:
             text = file.readlines()
         screen.fill((0, 0, 0))
         y = 0
