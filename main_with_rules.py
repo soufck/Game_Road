@@ -121,7 +121,7 @@ class GreatingWindow:
         y = 0
         for line in text:
             y += 50
-            text_surface = font.render(line, True, (255, 255, 255))
+            text_surface = font.render(line[:-1], True, (255, 255, 255))
             text_rect = text_surface.get_rect(center=(400, y))
 
             screen.blit(text_surface, text_rect)
